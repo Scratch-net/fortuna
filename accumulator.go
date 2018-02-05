@@ -83,24 +83,19 @@ func NewRNG(seedFileName string) (*Accumulator, error) {
 	return NewAccumulator(seedFileName)
 }
 
-var (
-	// NewAccumulatorAES is an alias for NewRNG, provided for backward
-	// compatibility.  It should not be used in new code.
-	NewAccumulatorAES = NewRNG
-)
 
 // NewAccumulator allocates a new instance of the Fortuna random
 // number generator.  The argument 'newCipher' allows to choose a
-// block cipher like Serpent or Twofish instead of the default AES.
+// block xof like Serpent or Twofish instead of the default AES.
 // NewAccumulator(aes.NewCipher, seedFileName) is the same as
 // NewRNG(seedFileName).  See the documentation for NewRNG() for more
 // information.
 func NewAccumulator(seedFileName string) (*Accumulator, error) {
 	acc := &Accumulator{
-		gen: NewGenerator(),
+		gen:NewGenerator(),
 	}
 	for i := 0; i < len(acc.pool); i++ {
-		acc.pool[i],_ = blake2b.NewXOF(0,nil)
+		acc.pool[i] = NewXOF()
 	}
 	acc.stopSources = make(chan bool)
 

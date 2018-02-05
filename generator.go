@@ -32,18 +32,11 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
-const (
-	// maxBlocks gives the maximal number of blocks to generate until
-	// rekeying is required.
-	maxBlocks = 1 << 16
 
-	// keySize gives the size of the internal key in bytes
-)
-
-// NewCipher is the type which represents the function to allocate a
-// new block cipher.  A typical example of a function of this type is
-// aes.NewCipher.
-type NewCipher func([]byte) (blake2b.XOF, error)
+var NewXOF = func() blake2b.XOF {
+	xof, _ := blake2b.NewXOF(0, nil)
+	return xof
+}
 
 // Generator holds the state of one instance of the Fortuna pseudo
 // random number generator.  Before use, the generator must be seeded
@@ -55,25 +48,22 @@ type NewCipher func([]byte) (blake2b.XOF, error)
 // If the generator is accessed from different Go-routines, the
 // callers must synchronise access using sync.Mutex or similar.
 type Generator struct {
-	key       []byte
-	cipher    blake2b.XOF
+	key []byte
+	xof blake2b.XOF
 }
 
 
 func (gen *Generator) setKey(key []byte) {
 
-	xof, err := blake2b.NewXOF(0, nil)
+	xof := NewXOF()
 	xof.Write(gen.key)
 	xof.Write(key)
-	if err != nil {
-		panic("newCipher() failed, cannot set generator key")
-	}
 
 	newKey := make([]byte, 32)
 	xof.Read(newKey)
-	gen.key = newKey
+	gen.key = newKey //first 32 bytes of output are the new key
 
-	gen.cipher = xof
+	gen.xof = xof
 }
 
 // setInitialSeed sets the initial seed for the Generator.  An
@@ -162,10 +152,7 @@ func (gen *Generator) setInitialSeed() {
 // user name, the currently installed network interfaces and
 // randomness from the system random number generator.
 func NewGenerator() *Generator {
-	cipher, _ := blake2b.NewXOF(0,nil)
-	gen := &Generator{
-		cipher:cipher,
-	}
+	gen := &Generator{}
 	gen.reset()
 	gen.setInitialSeed()
 
@@ -178,7 +165,7 @@ func NewGenerator() *Generator {
 // start the PRNG from a known state.
 func (gen *Generator) reset() {
 	gen.key = nil
-	gen.cipher.Reset()
+	gen.setKey(make([]byte, 32))
 }
 
 // Reseed uses the current generator state and the given seed value to
@@ -205,28 +192,13 @@ func (gen *Generator) ReseedInt64(seed int64) {
 	gen.Reseed(bytes)
 }
 
-// generateBlocks appends k blocks of random bits to data and returns
-// the resulting slice.  The size of a block is given by the block
-// size of the underlying cipher, i.e. 16 bytes for AES.
-func (gen *Generator) generateBlocks(data []byte, k uint) []byte {
-	if isZero(gen.key) {
-		panic("Fortuna generator not yet seeded")
-	}
-
-	buf := make([]byte, k)
-	gen.cipher.Read(buf)
-	data = append(data, buf...)
-
-	return data
-}
-
 
 // PseudoRandomData returns a slice of n pseudo-random bytes.  The
 // result can be used as a replacement for a sequence of n uniformly
 // distributed and independent bytes.
 func (gen *Generator) PseudoRandomData(n uint) []byte {
 	res := make([]byte, n)
-	gen.cipher.Read(res)
+	gen.xof.Read(res)
 	return res
 }
 
