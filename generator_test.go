@@ -18,16 +18,13 @@ package fortuna
 
 import (
 	"bytes"
-	"crypto/aes"
 	"math"
 	"math/rand"
 	"testing"
 )
 
 func TestConstants(t *testing.T) {
-	if keySize != 32 {
-		t.Error("wrong key size")
-	}
+
 }
 
 func TestOutput(t *testing.T) {
@@ -35,60 +32,39 @@ func TestOutput(t *testing.T) {
 	// "Python Cryptography Toolkit",
 	// https://www.dlitz.net/software/pycrypto/ .
 
-	rng := NewGenerator(aes.NewCipher)
+	rng := NewGenerator()
 	rng.reset()
 
 	rng.Reseed([]byte{1, 2, 3, 4})
 	out := rng.PseudoRandomData(100)
 	correct := []byte{
-		82, 254, 233, 139, 254, 85, 6, 222, 222, 149, 120, 35, 173, 71, 89,
-		232, 51, 182, 252, 139, 153, 153, 111, 30, 16, 7, 124, 185, 159, 24,
-		50, 68, 236, 107, 133, 18, 217, 219, 46, 134, 169, 156, 211, 74, 163,
-		17, 100, 173, 26, 70, 246, 193, 57, 164, 167, 175, 233, 220, 160, 114,
-		2, 200, 215, 80, 207, 218, 85, 58, 235, 117, 177, 223, 87, 192, 50,
-		251, 61, 65, 141, 100, 59, 228, 23, 215, 58, 107, 248, 248, 103, 57,
-		127, 31, 241, 91, 230, 33, 0, 164, 77, 46,
+		223, 9, 57, 106, 18, 36, 220, 141, 234, 145, 212, 63, 159, 251, 236, 127, 161, 154, 116, 173, 105, 81, 18, 251, 16, 3, 162, 193, 224, 222, 228, 228, 180, 207, 168, 228, 75, 13, 21, 97, 109, 48, 22, 90, 155, 201, 22, 85, 75, 129, 222, 54, 240, 254, 169, 217, 119, 239, 57, 222, 237, 55, 40, 217, 176, 87, 43, 203, 251, 231, 82, 160, 254, 58, 175, 26, 44, 138, 204, 27, 30, 54, 103, 168, 147, 32, 2, 75, 29, 0, 74, 131, 93, 132, 97, 179, 89, 140, 218, 86,
 	}
 	if bytes.Compare(out, correct) != 0 {
-		t.Error("wrong RNG output")
+		t.Error("wrong RNG output", out)
 	}
 
 	out = rng.PseudoRandomData(1<<20 + 100)[1<<20:]
 	correct = []byte{
-		122, 164, 26, 67, 102, 65, 30, 217, 219, 113, 14, 86, 214, 146, 185,
-		17, 107, 135, 183, 7, 18, 162, 126, 206, 46, 38, 54, 172, 248, 194,
-		118, 84, 162, 146, 83, 156, 152, 96, 192, 15, 23, 224, 113, 76, 21,
-		8, 226, 41, 161, 171, 197, 180, 138, 236, 126, 137, 101, 25, 219, 225,
-		3, 189, 16, 242, 33, 91, 34, 27, 8, 171, 171, 115, 157, 109, 248,
-		198, 227, 18, 204, 211, 42, 184, 92, 42, 171, 222, 198, 117, 162, 134,
-		116, 109, 77, 195, 187, 139, 37, 78, 224, 63,
+		191, 165, 64, 21, 6, 66, 189, 246, 228, 195, 203, 197, 68, 48, 183, 176, 64, 69, 218, 77, 66, 194, 185, 167, 234, 237, 84, 42, 231, 206, 37, 253, 205, 16, 136, 181, 117, 144, 16, 222, 249, 130, 10, 59, 124, 219, 30, 190, 113, 239, 90, 89, 146, 154, 243, 141, 44, 111, 51, 246, 81, 84, 95, 77, 198, 177, 160, 224, 244, 141, 177, 122, 58, 191, 221, 126, 36, 100, 209, 190, 120, 97, 68, 252, 110, 161, 80, 252, 3, 204, 95, 227, 214, 42, 107, 255, 53, 207, 48, 191,
 	}
 	if bytes.Compare(out, correct) != 0 {
-		t.Error("wrong RNG output")
+		t.Error("wrong RNG output", out)
 	}
 
 	rng.Reseed([]byte{5})
 	out = rng.PseudoRandomData(100)
 	correct = []byte{
-		217, 168, 141, 167, 46, 9, 218, 188, 98, 124, 109, 128, 242, 22, 189,
-		120, 180, 124, 15, 192, 116, 149, 211, 136, 253, 132, 60, 3, 29, 250,
-		95, 66, 133, 195, 37, 78, 242, 255, 160, 209, 185, 106, 68, 105, 83,
-		145, 165, 72, 179, 167, 53, 254, 183, 251, 128, 69, 78, 156, 219, 26,
-		124, 202, 35, 9, 174, 167, 41, 128, 184, 25, 2, 1, 63, 142, 205,
-		162, 69, 68, 207, 251, 101, 10, 29, 33, 133, 87, 189, 36, 229, 56,
-		17, 100, 138, 49, 79, 239, 210, 189, 141, 46,
+		169, 57, 172, 193, 115, 140, 160, 191, 167, 244, 234, 141, 55, 153, 89, 142, 215, 36, 90, 188, 82, 220, 139, 106, 197, 141, 91, 246, 209, 177, 9, 251, 134, 40, 195, 144, 238, 85, 15, 253, 49, 228, 111, 198, 230, 162, 117, 73, 237, 21, 35, 104, 193, 251, 237, 99, 231, 149, 9, 169, 93, 20, 87, 103, 117, 206, 36, 183, 76, 252, 222, 76, 226, 81, 140, 216, 19, 38, 5, 157, 99, 43, 140, 26, 66, 188, 206, 131, 12, 25, 103, 126, 8, 30, 238, 149, 123, 143, 152, 71,
 	}
 	if bytes.Compare(out, correct) != 0 {
-		t.Error("wrong RNG output")
+		t.Error("wrong RNG output", out)
 	}
 }
 
 func TestReseed(t *testing.T) {
-	rng := NewGenerator(aes.NewCipher)
+	rng := NewGenerator()
 	if len(rng.key) != 32 {
-		t.Error("wrong key size")
-	}
-	if len(rng.counter) != 16 {
 		t.Error("wrong key size")
 	}
 
@@ -96,13 +72,10 @@ func TestReseed(t *testing.T) {
 	if len(rng.key) != 32 {
 		t.Error("wrong key size after reseeding")
 	}
-	if len(rng.counter) != 16 {
-		t.Error("wrong key size after reseeding")
-	}
 }
 
 func TestSeed(t *testing.T) {
-	rng := NewGenerator(aes.NewCipher)
+	rng := NewGenerator()
 
 	for _, seed := range []int64{0, 1, 1 << 62} {
 		rng.Seed(seed)
@@ -116,7 +89,7 @@ func TestSeed(t *testing.T) {
 }
 
 func TestPrng(t *testing.T) {
-	rng := NewGenerator(aes.NewCipher)
+	rng := NewGenerator()
 	rng.Seed(123)
 
 	prng := rand.New(rng)
@@ -136,7 +109,7 @@ func TestPrng(t *testing.T) {
 }
 
 func BenchmarkReseed(b *testing.B) {
-	rng := NewGenerator(aes.NewCipher)
+	rng := NewGenerator()
 	seed := []byte{1, 2, 3, 4}
 	b.ResetTimer()
 
@@ -146,7 +119,7 @@ func BenchmarkReseed(b *testing.B) {
 }
 
 func generator(b *testing.B, n uint) {
-	rng := NewGenerator(aes.NewCipher)
+	rng := NewGenerator()
 	rng.Seed(0)
 
 	b.SetBytes(int64(n))

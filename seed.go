@@ -67,11 +67,6 @@ func (acc *Accumulator) updateSeedFile() error {
 	fi, err := acc.seedFile.Stat()
 	if err != nil {
 		return err
-	} else if fi.Mode()&os.FileMode(0077) != 0 {
-		trace.T("fortuna/seed", trace.PrioError,
-			"seed file %q has insecure permissions, aborted",
-			acc.seedFile.Name())
-		return ErrInsecureSeed
 	}
 
 	_, err = acc.seedFile.Seek(0, os.SEEK_SET)

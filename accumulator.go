@@ -17,16 +17,14 @@
 package fortuna
 
 import (
-	"crypto/aes"
-	"hash"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/seehuhn/sha256d"
 	"github.com/seehuhn/trace"
+	"golang.org/x/crypto/blake2b"
 )
 
 const (
@@ -54,7 +52,7 @@ type Accumulator struct {
 	poolMutex    sync.Mutex
 	reseedCount  int
 	nextReseed   time.Time
-	pool         [numPools]hash.Hash
+	pool         [numPools]blake2b.XOF
 	poolZeroSize int
 
 	sourceMutex sync.Mutex
@@ -82,7 +80,7 @@ type Accumulator struct {
 // The returned random generator must be closed using the .Close()
 // method after use.
 func NewRNG(seedFileName string) (*Accumulator, error) {
-	return NewAccumulator(aes.NewCipher, seedFileName)
+	return NewAccumulator(seedFileName)
 }
 
 var (
@@ -97,12 +95,12 @@ var (
 // NewAccumulator(aes.NewCipher, seedFileName) is the same as
 // NewRNG(seedFileName).  See the documentation for NewRNG() for more
 // information.
-func NewAccumulator(newCipher NewCipher, seedFileName string) (*Accumulator, error) {
+func NewAccumulator(seedFileName string) (*Accumulator, error) {
 	acc := &Accumulator{
-		gen: NewGenerator(newCipher),
+		gen: NewGenerator(),
 	}
 	for i := 0; i < len(acc.pool); i++ {
-		acc.pool[i] = sha256d.New()
+		acc.pool[i],_ = blake2b.NewXOF(0,nil)
 	}
 	acc.stopSources = make(chan bool)
 
@@ -152,11 +150,12 @@ func NewAccumulator(newCipher NewCipher, seedFileName string) (*Accumulator, err
 // entropy into the underlying generator so that it can go into the
 // seed file.
 func (acc *Accumulator) tearDownPools() {
-	data := make([]byte, 0, numPools*sha256d.Size)
+	const outSize = 64
+	data := make([]byte, numPools*outSize)
 
 	acc.poolMutex.Lock()
 	for i := 0; i < numPools; i++ {
-		data = acc.pool[i].Sum(data)
+		acc.pool[i].Write(data[i*outSize:i*outSize+outSize])
 		acc.pool[i] = nil
 	}
 	acc.poolZeroSize = 0 // prevent accidential last-minute reseeding
@@ -168,7 +167,9 @@ func (acc *Accumulator) tearDownPools() {
 }
 
 func (acc *Accumulator) tryReseeding() []byte {
+	const outSize = 64
 	now := time.Now()
+
 
 	acc.poolMutex.Lock()
 	defer acc.poolMutex.Unlock()
@@ -178,16 +179,18 @@ func (acc *Accumulator) tryReseeding() []byte {
 		acc.poolZeroSize = 0
 		acc.reseedCount++
 
-		seed := make([]byte, 0, numPools*sha256d.Size)
+		seed := make([]byte, numPools*outSize)
 		pools := []string{}
+		cnt := 0
 		for i := uint(0); i < numPools; i++ {
 			x := 1 << i
 			if acc.reseedCount%x != 0 {
 				break
 			}
-			seed = acc.pool[i].Sum(seed)
+			acc.pool[i].Read(seed[i*outSize:i*outSize+outSize])
 			acc.pool[i].Reset()
 			pools = append(pools, strconv.Itoa(int(i)))
+			cnt++
 		}
 		trace.T("fortuna/seed", trace.PrioInfo,
 			"reseeding from pools %s", strings.Join(pools, " "))

@@ -17,10 +17,11 @@
 package fortuna
 
 import (
-	"crypto/sha256"
 	"time"
 
 	"github.com/seehuhn/trace"
+
+	"encoding/binary"
 )
 
 const channelBufferSize = 4
@@ -43,7 +44,10 @@ func (acc *Accumulator) addRandomEvent(source uint8, seq uint, data []byte) {
 	defer acc.poolMutex.Unlock()
 
 	poolHash := acc.pool[pool]
-	poolHash.Write([]byte{source, byte(len(data))})
+	poolHash.Write([]byte{source})
+	buf := make ([]byte, 4)
+	binary.BigEndian.PutUint32(buf, uint32(len(data)))
+	poolHash.Write(buf)
 	poolHash.Write(data)
 	if pool == 0 {
 		acc.poolZeroSize += 2 + len(data)
@@ -90,12 +94,6 @@ func (acc *Accumulator) NewEntropyDataSink() chan<- []byte {
 			case data, ok := <-c:
 				if !ok {
 					break loop
-				}
-
-				if len(data) > 32 {
-					hash := sha256.New()
-					hash.Write(data)
-					data = hash.Sum(nil)
 				}
 
 				trace.T("fortuna/entropy", trace.PrioDebug,

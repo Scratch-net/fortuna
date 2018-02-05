@@ -18,7 +18,6 @@ package fortuna
 
 import (
 	"bytes"
-	"crypto/aes"
 	"math"
 	"testing"
 )
@@ -49,7 +48,7 @@ func TestBytesToInt64(t *testing.T) {
 		t.Error("bytesToInt64 failed for x=0")
 	}
 
-	gen := NewGenerator(aes.NewCipher)
+	gen := NewGenerator()
 	gen.Seed(12345)
 	for i := 0; i < 1000; i++ {
 		buf = gen.PseudoRandomData(8)
