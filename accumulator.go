@@ -174,15 +174,18 @@ func (acc *Accumulator) tryReseeding() []byte {
 		acc.poolZeroSize = 0
 		acc.reseedCount++
 
-		seed := make([]byte, numPools*outSize)
-		pools := []string{}
+		seed := make([]byte, 0, numPools*outSize)
+		var pools []string
 		cnt := 0
 		for i := uint(0); i < numPools; i++ {
 			x := 1 << i
 			if acc.reseedCount%x != 0 {
 				break
 			}
-			acc.pool[i].Read(seed[i*outSize:i*outSize+outSize])
+
+			seed = seed[0:cnt*outSize+outSize]
+
+			acc.pool[i].Read(seed[cnt*outSize:cnt*outSize+outSize])
 			acc.pool[i].Reset()
 			pools = append(pools, strconv.Itoa(int(i)))
 			cnt++

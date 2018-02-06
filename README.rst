@@ -4,6 +4,9 @@ Fortuna
 An implementation of Ferguson and Schneier's Fortuna_ random number
 generator in Go.
 
+This implementation changes SHA-256 to Blake and AES to BlakeX XOF function, thus eliminating a special need in
+implementing counter encryption
+
 Copyright (C) 2013  Jochen Voss
 
 This program is free software: you can redistribute it and/or modify
@@ -48,7 +51,7 @@ Installation
 
 This package can be installed using the ``go get`` command::
 
-    go get github.com/seehuhn/fortuna
+    go get github.com/Scratch-net/fortuna
 
 
 Usage
